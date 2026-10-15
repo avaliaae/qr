@@ -5,38 +5,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
   <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#0f172a">
   <title>Abrindo…</title>
   <style>
-    body { font: 16px system-ui, sans-serif; display: flex; align-items: center; justify-content: center;
-      height: 100vh; margin: 0; color: #101828; text-align: center; padding: 16px; }
-    a { color: #1d4ed8; }
+    :root { --bg: #0f172a; --txt: #e2e8f0; --sub: #94a3b8; --star: #fbbf24; --off: #334155; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      background: radial-gradient(circle at 50% 35%, #1e293b 0%, var(--bg) 70%);
+      color: var(--txt); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px;
+    }
+    .wrap { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+
+    /* Estrelas que acendem em sequência, em loop */
+    .stars { display: flex; gap: 10px; }
+    .stars svg { width: 38px; height: 38px; fill: var(--off); transform-origin: 50% 55%;
+      animation: acende 2.1s ease-in-out infinite; }
+    .stars svg:nth-child(2) { animation-delay: .15s; }
+    .stars svg:nth-child(3) { animation-delay: .30s; }
+    .stars svg:nth-child(4) { animation-delay: .45s; }
+    .stars svg:nth-child(5) { animation-delay: .60s; }
+    @keyframes acende {
+      0%, 55%, 100% { fill: var(--off); transform: scale(1); filter: none; }
+      20%, 40% { fill: var(--star); transform: scale(1.22) rotate(-6deg); filter: drop-shadow(0 0 10px rgba(251,191,36,.7)); }
+    }
+
+    .barra { width: 190px; height: 4px; border-radius: 4px; background: #1e293b; overflow: hidden; }
+    .barra i { display: block; height: 100%; width: 40%; border-radius: 4px;
+      background: linear-gradient(90deg, transparent, var(--star), transparent);
+      animation: corre 1.3s ease-in-out infinite; }
+    @keyframes corre { from { transform: translateX(-120%); } to { transform: translateX(300%); } }
+
+    #msg { font-weight: 600; letter-spacing: .01em; }
+    #msg small { display: block; color: var(--sub); font-weight: 400; margin-top: 4px; }
+    a { color: #93c5fd; }
+    .fim .stars svg, .fim .barra { animation: none; }
+    .fim .barra { display: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .stars svg { animation: none; fill: var(--star); }
+      .barra i { animation: none; width: 100%; }
+    }
   </style>
 </head>
 <body>
-  <div id="m">Abrindo…</div>
+  <div class="wrap" id="wrap">
+    <div class="stars" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg>
+      <svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg>
+    </div>
+    <div class="barra" aria-hidden="true"><i></i></div>
+    <div id="msg" role="status" aria-live="polite">Abrindo…<small>Só um instante</small></div>
+  </div>
   <script>
     // Endereço do redirecionador (Apps Script, acesso anônimo). Só devolve o destino do código.
     var API = 'https://script.google.com/macros/s/AKfycbwbOLnvmzHfxXWGpTlUvme5V-ggLs1qFJew_KnfvZeup8gARSMqL49H2HBfQFN5LCB0KA/exec';
-    var m = document.getElementById('m');
+    var msg = document.getElementById('msg');
     var codigo = new URLSearchParams(location.search).get('r');
 
-    function falha(msg) { m.textContent = msg; }
+    function falha(titulo, detalhe) {
+      document.getElementById('wrap').className = 'wrap fim';
+      msg.innerHTML = '';
+      msg.appendChild(document.createTextNode(titulo));
+      var s = document.createElement('small');
+      s.textContent = detalhe || '';
+      msg.appendChild(s);
+    }
 
     if (!codigo) {
-      falha('QR Code inválido.');
+      falha('QR Code inválido', 'Confira o código impresso.');
     } else {
       fetch(API + '?json=1&r=' + encodeURIComponent(codigo))
         .then(function (r) { return r.json(); })
         .then(function (d) {
           if (d && /^https?:\/\//i.test(d.destino || '')) {
-            m.innerHTML = '<a id="l">Toque aqui se não abrir sozinho</a>';
+            msg.innerHTML = 'Abrindo…<small><a id="l">Toque aqui se não abrir sozinho</a></small>';
             document.getElementById('l').href = d.destino;
             location.replace(d.destino);
           } else {
-            falha('Este QR Code não está ativo.');
+            falha('Este QR Code não está ativo', 'Fale com quem entregou a plaquinha.');
           }
         })
-        .catch(function () { falha('Não foi possível abrir agora. Tente novamente.'); });
+        .catch(function () { falha('Não foi possível abrir agora', 'Verifique a internet e escaneie de novo.'); });
     }
   </script>
 </body>
